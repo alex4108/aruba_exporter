@@ -105,8 +105,9 @@ func loadConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	return config.Load(bytes.NewReader(b))
+
 }
 
 func loadConfigFromFlags() *config.Config {
@@ -117,6 +118,11 @@ func loadConfigFromFlags() *config.Config {
 	c.BatchSize = *sshBatchSize
 	c.Username = *sshUsername
 	c.Password = *sshPassword
+	if c.Password == nil || c.Password == "" { 
+          log.Debugln("Loaded password from env")
+          c.Password = os.Getenv("SSH_PASSWORD")
+	}
+	
 	c.KeyFile = *sshKeyFile
 	c.DevicesFromTargets(*sshHosts)
 	log.Debugln(c)
