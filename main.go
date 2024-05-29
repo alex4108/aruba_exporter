@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-//	"os/signal"
+
+	//	"os/signal"
 	"net/http"
-//	"strings"
-//	"time"
+	//	"strings"
+	//	"time"
 
 	"github.com/slashdoom/aruba_exporter/config"
 	"github.com/slashdoom/aruba_exporter/connector"
@@ -23,19 +24,19 @@ import (
 const version string = "0.0.1"
 
 var (
-	showVersion        = flag.Bool("version", false, "Print version information.")
-	listenAddress      = flag.String("web.listen-address", ":9909", "Address on which to expose metrics and web interface.")
-	metricsPath        = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	sshHosts           = flag.String("ssh.targets", "", "Hosts to scrape")
-	sshUsername        = flag.String("ssh.user", "aruba_exporter", "Username to use when connecting to devices using ssh")
-	sshKeyFile         = flag.String("ssh.keyfile", "", "Public key file to use when connecting to devices using ssh")
-	sshPassword        = flag.String("ssh.password", "", "Password to use when connecting to devices using ssh")
-	sshTimeout         = flag.Int("ssh.timeout", 5, "Timeout to use for SSH connection")
-	sshBatchSize       = flag.Int("ssh.batch-size", 10000, "The SSH response batch size")
-	level              = flag.String("level", "info", "Set logging verbose level")
-	configFile         = flag.String("config.file", "", "Path to config file")
-	devices            []*connector.Device
-	cfg                *config.Config
+	showVersion   = flag.Bool("version", false, "Print version information.")
+	listenAddress = flag.String("web.listen-address", ":9909", "Address on which to expose metrics and web interface.")
+	metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
+	sshHosts      = flag.String("ssh.targets", "", "Hosts to scrape")
+	sshUsername   = flag.String("ssh.user", "aruba_exporter", "Username to use when connecting to devices using ssh")
+	sshKeyFile    = flag.String("ssh.keyfile", "", "Public key file to use when connecting to devices using ssh")
+	sshPassword   = flag.String("ssh.password", "", "Password to use when connecting to devices using ssh")
+	sshTimeout    = flag.Int("ssh.timeout", 5, "Timeout to use for SSH connection")
+	sshBatchSize  = flag.Int("ssh.batch-size", 10000, "The SSH response batch size")
+	level         = flag.String("level", "info", "Set logging verbose level")
+	configFile    = flag.String("config.file", "", "Path to config file")
+	devices       []*connector.Device
+	cfg           *config.Config
 )
 
 func init() {
@@ -105,9 +106,12 @@ func loadConfig() (*config.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	
-	return config.Load(bytes.NewReader(b))
 
+	c, err := config.Load(bytes.NewReader(b))
+	if c.Password == "" {
+		log.Debugln("Loaded password from env")
+		c.Password = os.Getenv("SSH_PASSWORD")
+	}
 }
 
 func loadConfigFromFlags() *config.Config {
@@ -118,11 +122,6 @@ func loadConfigFromFlags() *config.Config {
 	c.BatchSize = *sshBatchSize
 	c.Username = *sshUsername
 	c.Password = *sshPassword
-	if c.Password == nil || c.Password == "" { 
-          log.Debugln("Loaded password from env")
-          c.Password = os.Getenv("SSH_PASSWORD")
-	}
-	
 	c.KeyFile = *sshKeyFile
 	c.DevicesFromTargets(*sshHosts)
 	log.Debugln(c)
